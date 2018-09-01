@@ -51,6 +51,10 @@ OBJECT stack_peek(STACK *s){
 
 typedef uint8_t* (*instruction)(uint8_t *, STACK *);
 
+STACK data;
+instruction ops[256];
+uint8_t *code;
+
 void usage(){
     printf("usage: mach <file>\n");
     exit(1);
@@ -107,11 +111,54 @@ uint8_t *op_emiti(uint8_t *ip, STACK *s){
     return ip + 1;
 }
 
+uint8_t *op_addi(uint8_t *ip, STACK *s){
+	OBJECT a = stack_pop(s);
+	OBJECT b = stack_pop(s);
+	OBJECT o;
+	o.type = 'i';
+	o.i32 = a.i32 + b.i32;
+	stack_push(s, o);
+	return ip + 1;
+}
+
+uint8_t *op_subi(uint8_t *ip, STACK *s){
+	OBJECT a = stack_pop(s);
+	OBJECT b = stack_pop(s);
+	OBJECT o;
+	o.type = 'i';
+	o.i32 = a.i32 - b.i32;
+	stack_push(s, o);
+	return ip + 1;
+}
+
+uint8_t *op_multi(uint8_t *ip, STACK *s){
+	OBJECT a = stack_pop(s);
+	OBJECT b = stack_pop(s);
+	OBJECT o;
+	o.type = 'i';
+	o.i32 = a.i32 * b.i32;
+	stack_push(s, o);
+	return ip + 1;
+}
+
+uint8_t *op_divi(uint8_t *ip, STACK *s){
+	OBJECT a = stack_pop(s);
+	OBJECT b = stack_pop(s);
+	OBJECT o;
+	o.type = 'i';
+	o.i32 = a.i32 / b.i32;
+	stack_push(s, o);
+	return ip + 1;
+}
+
+uint8_t *op_jump(uint8_t *ip, STACK *s){
+	int offset = *((uint32_t *)(ip + 1));
+	return code + offset;
+}
+
 int main(int argc, char** argv){
-    uint8_t *code;
     uint8_t *ip;
-    STACK data;
-    instruction ops[256];
+
     
     if(argc != 2){
         usage();
@@ -120,10 +167,20 @@ int main(int argc, char** argv){
     for(int i = 0; i < 256; i++)
         ops[i] = op_nop;
         
+    // IO
     ops['c'] = op_pushc;
     ops['e'] = op_emitc;
     ops['i'] = op_pushi;
     ops['n'] = op_emiti;
+    
+    // Math
+    ops['m'] = op_multi;
+    ops['a'] = op_addi;
+    ops['s'] = op_subi;
+    ops['d'] = op_divi;
+    
+    // Control
+    ops['j'] = op_jump;
     
     code = load_file(argv[1]);
     data = stack_new(STACK_SIZE);
