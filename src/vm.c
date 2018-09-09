@@ -7,6 +7,12 @@
 
 #define STACK_SIZE 1024
 
+enum TYPE {
+    NUMBER = 'n',
+    CHAR = 'c',
+    POINTER = 'p'
+};
+
 typedef struct OBJECT_t {
     uint8_t type;
     union {
@@ -14,6 +20,7 @@ typedef struct OBJECT_t {
         int8_t i8;
         uint32_t u32;
         int32_t i32;
+        double d64;
         void *ptr;
     };
 } OBJECT;
@@ -79,81 +86,144 @@ uint8_t* load_file(char *filename){
     return code;
 }
 
+// No Operation
 uint8_t *op_nop(uint8_t *ip, STACK *s){
     return ip + 1;
 }
 
+// Push a character on the stack
 uint8_t *op_pushc(uint8_t *ip, STACK *s){
     OBJECT o;
-    o.type = 'c';
+    o.type = CHAR;
     o.u8 = *(ip + 1);
     stack_push(s, o);
     return ip + 2;
 }
 
-uint8_t *op_emitc(uint8_t *ip, STACK *s){
-    OBJECT o = stack_pop(s);
-    putchar(o.u8);
-    return ip + 1;
-}
 
-uint8_t *op_pushi(uint8_t *ip, STACK *s){
-    OBJECT o;
-    o.type = 'i';
-    o.u32 = *((uint32_t*) (ip + 1));
-    stack_push(s, o);
+// Pop character off the stack and print
+uint8_t *op_emitc(uint8_t *ip, STACK *s){
+    uint32_t num;
+	num = *((uint32_t*)(ip + 1));
+	for(int i = 0; i < num; i++){
+    	OBJECT o = stack_pop(s);
+    	putchar(o.u8);
+	}
     return ip + 5;
 }
 
-uint8_t *op_emiti(uint8_t *ip, STACK *s){
-    OBJECT o = stack_pop(s);
-    printf("%u", o.u32);
-    return ip + 1;
+// Push a number on the stack (double)
+uint8_t *op_pushn(uint8_t *ip, STACK *s){
+    OBJECT o;
+    o.type = NUMBER;
+    o.d64 = *((double*) (ip + 1));
+    stack_push(s, o);
+    return ip + 9;
 }
 
-uint8_t *op_addi(uint8_t *ip, STACK *s){
+// Pop a number off the stack and print
+uint8_t *op_emitn(uint8_t *ip, STACK *s){
+	uint32_t num;
+	num = *((uint32_t*)(ip + 1));
+	for(int i = 0; i < num; i++){
+    	OBJECT o = stack_pop(s);
+    	printf("%f", o.d64);
+	}
+    return ip + 5;
+}
+
+// Add the top 2 numbers on the stack
+uint8_t *op_addn(uint8_t *ip, STACK *s){
 	OBJECT a = stack_pop(s);
 	OBJECT b = stack_pop(s);
 	OBJECT o;
-	o.type = 'i';
-	o.i32 = a.i32 + b.i32;
+	o.type = NUMBER;
+	o.d64 = a.d64 + b.d64;
 	stack_push(s, o);
 	return ip + 1;
 }
 
-uint8_t *op_subi(uint8_t *ip, STACK *s){
+// Subtract the top 2 numbers on the stack
+uint8_t *op_subn(uint8_t *ip, STACK *s){
 	OBJECT a = stack_pop(s);
 	OBJECT b = stack_pop(s);
 	OBJECT o;
-	o.type = 'i';
-	o.i32 = a.i32 - b.i32;
+	o.type = NUMBER;
+	o.d64 = a.d64 - b.d64;
 	stack_push(s, o);
 	return ip + 1;
 }
 
-uint8_t *op_multi(uint8_t *ip, STACK *s){
+// Multiply the top 2 numbers on the stack
+uint8_t *op_multn(uint8_t *ip, STACK *s){
 	OBJECT a = stack_pop(s);
 	OBJECT b = stack_pop(s);
 	OBJECT o;
-	o.type = 'i';
-	o.i32 = a.i32 * b.i32;
+	o.type = NUMBER;
+	o.d64 = a.d64 * b.d64;
 	stack_push(s, o);
 	return ip + 1;
 }
 
-uint8_t *op_divi(uint8_t *ip, STACK *s){
+// Divide the top two numbers on the stack
+uint8_t *op_divn(uint8_t *ip, STACK *s){
 	OBJECT a = stack_pop(s);
 	OBJECT b = stack_pop(s);
 	OBJECT o;
-	o.type = 'i';
-	o.i32 = a.i32 / b.i32;
+	o.type = NUMBER;
+	o.d64 = a.d64 / b.d64;
 	stack_push(s, o);
 	return ip + 1;
 }
 
+// Jump to a new location
 uint8_t *op_jump(uint8_t *ip, STACK *s){
 	int offset = *((uint32_t *)(ip + 1));
 	return code + offset;
+}
+
+// Jump if number is equal to the number on the top of the stack
+uint8_t *op_jumpe_n(uint8_t *ip, STACK *s){
+    OBJECT a = stack_pop(s);
+    double comp = *((double*) (ip + 1));
+    if(a.d64 == comp)
+    {
+        int offset = *((uint32_t *)(ip + 9));
+        return code + offset;
+    }
+}
+
+// Jump if number is not equal to the number on the top of the stack
+uint8_t *op_jumpne_n(uint8_t *ip, STACK *s){
+    OBJECT a = stack_pop(s);
+    double comp = *((double*) (ip + 1));
+    if(a.d64 != comp)
+    {
+        int offset = *((uint32_t *)(ip + 9));
+        return code + offset;
+    }
+}
+
+// Jump if number is greater than the number on the top of the stack
+uint8_t *op_jumpgt_n(uint8_t *ip, STACK *s){
+    OBJECT a = stack_pop(s);
+    double comp = *((double*) (ip + 1));
+    if(a.d64 >= comp)
+    {
+        int offset = *((uint32_t *)(ip + 9));
+        return code + offset;
+    }
+}
+
+// Jump if number is less than the number on the top of the stack
+uint8_t *op_jumplt_n(uint8_t *ip, STACK *s){
+    OBJECT a = stack_pop(s);
+    double comp = *((double*) (ip + 1));
+    if(a.d64 <= comp)
+    {
+        int offset = *((uint32_t *)(ip + 9));
+        return code + offset;
+    }
 }
 
 int main(int argc, char** argv){
@@ -170,17 +240,21 @@ int main(int argc, char** argv){
     // IO
     ops['c'] = op_pushc;
     ops['e'] = op_emitc;
-    ops['i'] = op_pushi;
-    ops['n'] = op_emiti;
+    ops['n'] = op_pushn;
+    ops['v'] = op_emitn;
     
     // Math
-    ops['m'] = op_multi;
-    ops['a'] = op_addi;
-    ops['s'] = op_subi;
-    ops['d'] = op_divi;
+    ops['m'] = op_multn;
+    ops['a'] = op_addn;
+    ops['s'] = op_subn;
+    ops['d'] = op_divn;
     
     // Control
     ops['j'] = op_jump;
+    ops['l'] = op_jumplt_n;
+    ops['g'] = op_jumpgt_n;
+    ops['t'] = op_jumpe_n;
+    ops['f'] = op_jumpne_n;
     
     code = load_file(argv[1]);
     data = stack_new(STACK_SIZE);
