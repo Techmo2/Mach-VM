@@ -1,14 +1,12 @@
 # MACH Virtual Machine
 
-Mach is a simple virtual machine designed for speed, and simplicity. Mach uses single byte instructions with data embedded within the program binary.
-
-# Building Mach
-To compile, simply enter the project directory and run ```make```. You can also run ```make clean``` and ```make debug``` to clean the project directory, and build in debug mode respectively.
+Mach is a very simple virtual machine. This project was written to teach myself about how virtual machines function, and how various factors can effect its speed and feature set.
+The binaries used by this virtual machine do not have separate .text and .data sections. Instead, data used by an instruction is written directly after its op code. This makes assembly and execution easier, but adds more complexity to jumps, and ensuring that data isn't read as an op code.
 
 # Writing Programs
-Currently, programs for mach are written in assembly. Mach uses a simple, stack based assembly language.
+Currently, programs for mach are written in a simplified assembly. Mach uses a simple, stack based assembly language.
 
-Here's an example of a program that prints "Hello!" to the console:
+Here's an example of a program that prints "Hello!" to the console. Notice that since we are using a stack, characters must be added in reverse in order for them to be emitted in the correct order.
 ```lua
 pushc '\n'
 pushc '!'
@@ -21,7 +19,7 @@ emitc 6
 halt
 ```
 
-Here's an example of a program that multiplies two numbers, then prints the result to the console:
+Here's an example of a program that multiplies two numbers, then prints the result to the console.
 ```lua
 pushn 166.5
 pushn 15
@@ -30,19 +28,20 @@ emitn 1
 ```
 
 # Compiling Programs
-Mach comes with an assembler written in java. Eventually the assembler will be written in c as well, but for now I use java just to get development moving along. To use the assembler, you must have java installed. The assembler was built with java 10, but other versions should work.
+A few example programs can be found in the **examples** folder. To assemble a mach program, you can have two options:
 
-To assemble using the assembly script:
+Assemble using the assembly script:
 ```bash
 ./mass <yourassemblyfile>
 ```
 
-To assemble with the assembler directly:
+Assemble with the assembler directly:
 ```bash
 java -jar mass.jar <yourassemblyfile>
 ```
 
 Currently all assembled programs will be written to ```out.m```, but an option to specify the output will be added soon.
+The assembler will eventually be written in c.
 
 
 
@@ -51,16 +50,29 @@ Currently all assembled programs will be written to ```out.m```, but an option t
 To use the virtual machine, simply execute the mach binary and specify a path to a compiled mach program.
 ```./mach coolprogram.m```
 
-# Mach Instructions
-| Instruction (1 Byte) | Parameter Types   | Parameter Examples | Parameter Sizes | Notes                                                                                                    |
-|----------------------|-------------------|--------------------|-----------------|----------------------------------------------------------------------------------------------------------|
-| pushc                | character literal | '\n'               | 1 Byte          | Pushes a character onto the stack                                                                        |
-| pushn                | double literal    | 126.04             | 8 Bytes         | Pushes a number onto the stack                                                                           |
-| emitc                | integer literal   | 6                  | 4 Bytes         | Pops a character off the stack. Prints to console.                                                       |
-| emitn                | integer literal   | 120                | 4 Bytes         | Pops a number off the stack. Prints to console.                                                          |
-| multn                |                   |                    | 0 Bytes         | Pops 2 numbers off the stack. Pushes the product back on the stack.                                      |
-| addn                 |                   |                    | 0 Bytes         | Pops 2 numbers off the stack. Pushes the product back on the stack.                                      |
-| divn                 |                   |                    | 0 Bytes         | Pops 2 numbers off the stack. Pushes the quotient back on the stack.                                     |
-| subn                 |                   |                    | 0 Bytes         | Pops 2 numbers off the stack. Pushes the difference back on the stack.                                   |
-| jump                 | label             | :function_start    | 4 Bytes         | Jumps to the specified label in the program. The label is replaced by an integer offset during assembly. |
-| halt                 |                   |                    | 0 bytes         | Stops execution of the program, and closes the virtual machine.                                          |
+# Instruction Set
+| Instruction | Example                 | Parameter Bytes | Description                                                                                                  |  Layout                    |
+|-------------|-------------------------|-----------------|--------------------------------------------------------------------------------------------------------------|--------------------------|
+| pushc       | ```pushc '\s'```              | 1               | Pushes a given character onto the stack.                                                                     | ```pushc <char>```             |
+| emitc       | ```emitc 1```               | 4               | Pops the given number of characters off of the stack and prints them to the console.                         | ```emitc <number>```           |
+| printc      | ```printc 1```                | 4               | Prints the given number of characters without popping them off of the stack.                                 | ```printc <number>```          |
+| pushn       | ```pushn 0.75```              | 8               | Pushes the given number onto the stack.                                                                      | ```pushn <number>```           |
+| emitn       | ```emitn 1```                 | 4               | Pops the given number of numbers off of the stack and prints them to the console.                            | ```emitn <number>```           |
+| printn      | ```printn 1```                | 4               | Prints the given number of numbers without popping them off of the stack.                                    | ```printn <number>```          |
+| multn       | ```multn```                   | 0               | Pops 2 numbers off of the stack then pushes the product back onto the stack.                                 | ```multn```                    |
+| addn        | ```addn```                    | 0               | Pops 2 numbers off of the stack then pushes the sum back onto the stack.                                     | ```addn```                     |
+| subn        | ```subn```                    | 0               | Pops 2 numbers off of the stack then pushes the difference back onto the stack.                              | ```subn```                     |
+| divn        | ```divn```                    | 0               | Pops 2 numbers off of the stack then pushes the quotient back onto the stack.                                | ```divn```                     |
+| pop         | ```pop```                     | 0               | Pops an item off of the stack.                                                                               | ```pop```                      |
+| grow        | ```grow```                    | 0               | Clones the item at the top of the stack.                                                                     | ```grow```                     |
+| popt        | ```popt 3```                  | 4               | Pops an item off the stack and stores it at the given table index.                                           | ```popt <number>```            |
+| pullt       | ```pullt 3```                 | 4               | Pushes an item onto the stack from the given table index.                                                    | ```pullt <number>```           |
+| jump        | ```jump :somewhere```         | 4               | Jumps to the given label.                                                                                    | ```jump <label>```             |
+| jumplt      | ```jumplt 10 :somewhere```    | 12              | Jumps to the given label if the number on the top of the stack is less than the given number.                | ```jumplt <number> <label>```  |
+| jumpgt      | ```jumpgt 0 :positive```      | 12              | Jumps to the given label if the number at the top of the stack is greater than the given number.             | ```jumpgt <number> <label>```  |
+| jumpe       | ```jumpe 42 :theanswer```     | 12              | Jumps to the given label if the number at the top of the stack is equal to the given number.                 | ```jumpe <number> <label>```   |
+| jumpne      | ```jumpne 0 :nonzero```       | 12              | Jumps to the given label if the number at the top of the stack is not equal to the given number.             | ```jumpne <number> <label>```  |
+| jumplte     | ```jumplte 100 :somewhere```  | 12              | Jumps to the given label if the number at the top of the stack is less than or equal to the given number.    | ```jumplte <number> <label>``` |
+| jumpgte     | ```jumpgte 1000 :bignumber``` | 12              | Jumps to the given label if the number at the top of the stack is greater then or equal to the given number. | ```jumpgte <number> <label>``` |
+| halt        | ```halt```                    | 0               | Halts execution.                                                                                             | ```halt```                     |
+| nanotime    | ```nanotime```                | 0               | Pushes the current system time in nanoseconds onto the stack.                                                | ```nanotime```                 |

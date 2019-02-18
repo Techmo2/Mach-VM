@@ -1,18 +1,19 @@
 // Calculate the factorial of 15
+// You can put anything reasonable here
 pushn 15
 
 // Store the number in some registers
 grow
 grow
-popr 1
-popr 2
+popt 1
+popt 2
 
 :loop
-	pullr 1
+	pullt 1
 	pushn 1
 	subn
 	grow
-	popr 1
+	popt 1
 	jumplte 1 :end
 	multn
 jump :loop
@@ -20,11 +21,13 @@ jump :loop
 :end
 
 // Print string before result
-pullr 2
+pullt 2
 emitn 1
+pushc '\s'
 pushc '='
+pushc '\s'
 pushc '!'
-emitc 2
+emitc 4
 
 // Print result
 pop

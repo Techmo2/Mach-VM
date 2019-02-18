@@ -1,0 +1,2 @@
+#!/bin/bash
+java -jar mass.jar $1
