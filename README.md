@@ -75,4 +75,4 @@ To use the virtual machine, simply execute the mach binary and specify a path to
 | jumplte     | ```jumplte 100 :somewhere```  | 12              | Jumps to the given label if the number at the top of the stack is less than or equal to the given number.    | ```jumplte <number> <label>``` |
 | jumpgte     | ```jumpgte 1000 :bignumber``` | 12              | Jumps to the given label if the number at the top of the stack is greater then or equal to the given number. | ```jumpgte <number> <label>``` |
 | halt        | ```halt```                    | 0               | Halts execution.                                                                                             | ```halt```                     |
-| nanotime    | ```nanotime```                | 0               | Pushes the current system time in nanoseconds onto the stack.                                                | ```nanotime```                 |
+| ptime    | ```ptime```                | 0               | Pushes the current system time in nanoseconds onto the stack.                                                | ```ptime```                 |
