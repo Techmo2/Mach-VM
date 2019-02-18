@@ -1,6 +1,7 @@
 // How long does it take to count to 1 billion?
 
-// Print "start"
+// Print "Counting-to:
+
 pushc '\n'
 pushc 't'
 pushc 'r'
@@ -32,16 +33,21 @@ ptime
 // Subtract the current time from the start time
 subn
 
-// Multiply the result so it is positive
+// Divide the result so it is in seconds instead of nanoseconds
+pushn 1000000000
+divn
+
+// Make number positive
 pushn -1
 multn
 
-// Divide the result so it is in seconds instead of nanoseconds
-pushn 100000000000
-divn
-
 // Print the calculated runtime and pop it off the stack
 emitn 1
+
+pushc '\n'
+pushc 's'
+pushc '\s'
+emitc 3
 
 // Halt
 halt

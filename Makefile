@@ -1,15 +1,25 @@
-VM_SOURCE_DIR=./src
+SDIR=src
+IDIR=include
+ODIR=obj
 
-all: mach
+CC=gcc
+CFLAGS=-I$(IDIR) -O2
+LIBS=
+
+_DEPS = mconfig.h mobject.h mstack.h mtable.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_OBJ = mstack.o mtable.o mvm.o
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+
+$(ODIR)/%.o: $(SDIR)/%.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+mach: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: clean
 
 clean:
-	rm mach
-	cd $(VM_SOURCE_DIR) && $(MAKE) clean
-
-debug:
-	cd $(VM_SOURCE_DIR) && $(MAKE) debug
-	cp $(VM_SOURCE_DIR)/mach ./mach
-
-mach:
-	cd $(VM_SOURCE_DIR) && $(MAKE)
-	cp $(VM_SOURCE_DIR)/mach ./mach
+	rm -f $(ODIR)/*.o *~ mach $(INCDIR)/*~ 
